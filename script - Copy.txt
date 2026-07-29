@@ -1,0 +1,1487 @@
+﻿define slow_dissolve = Dissolve(1.5)
+
+style cinematic_text:
+    color "#ffffff"
+    size 28
+    text_align 0.5
+    xalign 0.5
+    yalign 0.9
+    drop_shadow (2, 2)
+    drop_shadow_color "#000000"
+
+transform character_scale:
+    zoom 0.8
+    xalign 0.5
+    yalign 1.0
+
+init python:
+    if persistent.endings is None:
+        persistent.endings = {}
+    defaults = {
+        "not_worth_walk": False,
+        "dessert": False,
+        "dessert_alley": False,
+        "next_time": False,
+        "youll_do": False,
+        "boykisser_good": False,
+        "boykisser_bad_sex": False,
+        "boykisser_alley_vore": False
+    }
+    for key, value in defaults.items():
+        if key not in persistent.endings:
+            persistent.endings[key] = value
+
+    def reset_endings():
+        persistent.endings = {
+            "not_worth_walk": False,
+            "dessert": False,
+            "dessert_alley": False,
+            "next_time": False,
+            "youll_do": False,
+            "boykisser_good": False,
+            "boykisser_bad_sex": False,
+            "boykisser_alley_vore": False
+        }
+
+    if persistent.boykisser_unlocked is None:
+        persistent.boykisser_unlocked = False
+
+    if persistent.boykisser_matched is None:
+        persistent.boykisser_matched = False
+
+# Characters
+define meow = Character("Meowscarada", color="#9b59b6")
+define nana = Character("Nanachi", color="#f0e68c")
+define cine = Character(None, what_style="cinematic_text", window_background=None)
+
+# Backgrounds
+image bg restaurant = "backgrounds/restaurant.png"
+image bg restroom = "backgrounds/restroom.png"
+image bg alley = "backgrounds/alley.png"
+image bg car = "backgrounds/car.png"
+image bg carext = "backgrounds/carext.png"
+
+#Meowscarada Poses
+image meowscarada neutral = "images/characters/meowscarada/neutral.png"
+image meowscarada smirk = "images/characters/meowscarada/smirk.png"
+image meowscarada surprised = "images/characters/meowscarada/surprised.png"
+image meowscarada pleased = "images/characters/meowscarada/pleased.png"
+image meowscarada predatory = "images/characters/meowscarada/predatory.png"
+image meowscarada amused = "images/characters/meowscarada/amused.png"
+image meowscarada bored = "images/characters/meowscarada/bored.png"
+image meowscarada hungry = "images/characters/meowscarada/hungry.png"
+image meowscarada annoyed = "images/characters/meowscarada/annoyed.png"
+#Meowscarada Restaurant CGs
+image cg meow restaurant arrive = "images/characters/meowscarada/restaurant_arrive.png"
+image cg meow restaurant eyecheck = "images/characters/meowscarada/restaurant_eyecheck.png"
+image cg meow restaurant waiter = "images/characters/meowscarada/restaurant_waiter.png"
+image cg meow restaurant smile = "images/characters/meowscarada/restaurant_smile.png"
+image cg meow restaurant footjob = "images/characters/meowscarada/restaurant_footjob.png"
+image cg meow restaurant footjob2 = "images/characters/meowscarada/restaurant_footjob2.png"
+image cg meow restaurant analpresent = "images/characters/meowscarada/restaurant_analpresent.png"
+image cg meow restaurant analvore = "images/characters/meowscarada/restaurant_analvore.png"
+image cg meow restaurant bellybulge = "images/characters/meowscarada/restaurant_bellybulge.png"
+image cg meow restaurant weightgain = "images/characters/meowscarada/restaurant_weightgain.png"
+image cg meow restaurant skull = "images/characters/meowscarada/restaurant_skull.png"
+#Meowscarada Restroom CGs
+image cg meow restroom door = "images/characters/meowscarada/restroom_door.png"
+image cg meow restroom makeout = "images/characters/meowscarada/restroom_makeout.png"
+image cg meow restroom makeout2 = "images/characters/meowscarada/restroom_makeout2.png"
+image cg meow restroom surprised = "images/characters/meowscarada/restroom_surprised.png"
+image cg meow restroom smug = "images/characters/meowscarada/restroom_smug.png"
+image cg meow restroom mawshot = "images/characters/meowscarada/restroom_mawshot.png"
+image cg meow restroom swallow = "images/characters/meowscarada/restroom_swallow.png"
+image cg meow restroom postswallow = "images/characters/meowscarada/restroom_postswallow.png"
+image cg meow restroom digestion = "images/characters/meowscarada/restroom_digestion.png"
+#Meowscarada Alley CGs
+
+#Nanachi Poses
+image nanachi neutral = "images/characters/nanachi/neutral.png"
+image nanachi curious = "images/characters/nanachi/curious.png"
+
+#Boykisser CGs
+image cg boy alley approach = "images/characters/boykisser/alley_approach.png"
+image cg boy alley cumspot = "images/characters/boykisser/alley_cumspot.png"
+image cg boy alley spread = "images/characters/boykisser/alley_spread.png"
+image cg boy alley analvore = "images/characters/boykisser/alley_analvore.png"
+
+
+# Variables
+default player_name = "Player"
+default meowscarada_affection = 0
+default meowscarada_matched = False
+default nanachi_affection = 0
+default nanachi_matched = False
+
+# App UI
+screen dating_app():
+    frame:
+        xfill True
+        yfill True
+        background "#1a1a2e"
+        
+        vbox:
+            xfill True
+            yfill True
+            spacing 0
+            
+            # Header
+            frame:
+                xfill True
+                background "#16213e"
+                padding (30, 15)
+                hbox:
+                    xfill True
+                    yalign 0.5
+                    text "AnthroDate" color "#9b59b6" size 40 bold True
+                    text "♥" color "#e74c3c" size 40 xalign 1.0
+
+            # Scrollable card area
+            viewport:
+                scrollbars "vertical"
+                mousewheel True
+                draggable True
+                xfill True
+                yfill True
+                
+                vbox:
+                    xfill True
+                    spacing 20
+
+                    # Row 1
+                    hbox:
+                        xalign 0.5
+                        spacing 30
+
+                        # Meowscarada
+                        frame:
+                            background "#16213e"
+                            padding (20, 20)
+                            xsize 350
+                            vbox:
+                                spacing 12
+                                add "images/characters/meowscarada/profile.png" xsize 310 ysize 310 xalign 0.5
+                                text "Meowscarada, 24" color "#ffffff" size 24 bold True
+                                text "📍 2km away" color "#9b59b6" size 17
+                                text "Confident. Elegant.\nDon't say I didn't warn you." color "#aaaaaa" size 16
+                                null height 5
+                                if not meowscarada_matched:
+                                    textbutton "♥ Like" action [SetVariable("meowscarada_matched", True), Jump("meowscarada_match")] xalign 0.5 style "like_button"
+                                else:
+                                    text "✓ Matched!" color "#9b59b6" size 18 xalign 0.5
+
+                        # Nanachi
+                        frame:
+                            background "#16213e"
+                            padding (20, 20)
+                            xsize 350
+                            vbox:
+                                spacing 12
+                                add "images/characters/nanachi/profile.png" xsize 310 ysize 310 xalign 0.5
+                                text "Nanachi, ???" color "#ffffff" size 24 bold True
+                                text "📍 Location unknown" color "#f0e68c" size 17
+                                text "Fluffy. Mysterious.\nSmells faintly of the abyss." color "#aaaaaa" size 16
+                                null height 5
+                                if not nanachi_matched:
+                                    textbutton "♥ Like" action [SetVariable("nanachi_matched", True), Jump("nanachi_match")] xalign 0.5 style "like_button"
+                                else:
+                                    text "✓ Matched!" color "#f0e68c" size 18 xalign 0.5
+
+                    # Row 2 - unlockable characters
+                    if persistent.boykisser_unlocked:
+                        hbox:
+                            xalign 0.5
+                            spacing 30
+
+                            frame:
+                                background "#16213e"
+                                padding (20, 20)
+                                xsize 350
+                                vbox:
+                                    spacing 12
+                                    add "images/characters/boykisser/profile.png" xsize 310 ysize 310 xalign 0.5
+                                    text "Officer Boykisser" color "#ffffff" size 24 bold True
+                                    text "📍 On duty. Always." color "#4169e1" size 17
+                                    text "Serve. Protect.\nMaybe more." color "#aaaaaa" size 16
+                                    null height 5
+                                    if not persistent.boykisser_matched:
+                                        textbutton "♥ Like" action [Function(setattr, persistent, "boykisser_matched", True), Jump("boykisser_match")] xalign 0.5 style "like_button"
+                                    else:
+                                        vbox:
+                                            spacing 10
+                                            text "✓ Matched!" color "#4169e1" size 18 xalign 0.5
+                                            textbutton "💬 Continue" action Jump("boykisser_match") xalign 0.5 style "like_button"
+
+style like_button:
+    background "#9b59b6"
+    padding (25, 12)
+
+style like_button_text:
+    color "#ffffff"
+    size 20
+
+label start:
+    cine "Welcome to AnthroDate."
+    cine "The city's most popular dating app for humans and anthros alike."
+    cine "Swipe. Match. See what happens."
+    call screen dating_app
+
+# ============================================================
+# MEOWSCARADA ROUTE
+# ============================================================
+
+label meowscarada_match:
+    hide meowscarada neutral
+    cine "It's a match."
+    cine "He liked you back almost immediately."
+    cine "Somehow that feels both flattering and suspicious."
+    jump meowscarada_chat_1
+
+label meowscarada_chat_1:
+    show meowscarada bored at character_scale
+    meow "So."
+    meow "You actually swiped right."
+    meow "Bold of you."
+
+    menu:
+        "Had to. You looked interesting.":
+            $ meowscarada_affection += 1
+            hide meowscarada bored
+            show meowscarada neutral at character_scale
+            meow "Interesting."
+            meow "That's one word for it."
+            meow "Most people say intimidating."
+        "I almost didn't.":
+            $ meowscarada_affection += 2
+            hide meowscarada bored
+            show meowscarada amused at character_scale
+            meow "..."
+            meow "I like that."
+            meow "Honesty."
+            meow "Most people just fall over themselves."
+    jump meowscarada_chat_2
+
+label meowscarada_chat_2:
+    show meowscarada neutral at character_scale
+    meow "I don't message first."
+    meow "Just so you know."
+    meow "So are you going to ask me out or just stare at my profile all day?"
+
+    menu:
+        "Ask him out.":
+            $ meowscarada_affection += 1
+            meow "..."
+            meow "Finally."
+            meow "I was beginning to lose interest."
+            jump meowscarada_date1_setup
+        "Play it cool.":
+            $ meowscarada_affection -= 1
+            meow "Cute."
+            meow "But don't push it."
+            jump meowscarada_date1_setup
+
+label meowscarada_date1_setup:
+    show meowscarada smirk at character_scale
+    meow "Fine. There's a place downtown I like."
+    meow "Good food. Private booths."
+    meow "Don't be late."
+    hide meowscarada smirk
+    cine "He sends you an address before you can respond."
+    cine "A high end restaurant downtown."
+    cine "You look up the reviews."
+    cine "The cheapest thing on the menu is forty euros."
+    cine "You start wondering what exactly you've gotten yourself into."
+    jump meowscarada_date1
+
+# ============================================================
+# DATE 1 - RESTAURANT
+# ============================================================
+
+label meowscarada_date1:
+    scene bg restaurant with slow_dissolve
+    show cg meow restaurant arrive with slow_dissolve
+    cine "He's already there when you arrive."
+    cine "Of course he is."
+    cine "Sitting perfectly upright in a private booth, menu in hand."
+    cine "He doesn't look up when you walk in."
+    cine "He doesn't need to."
+    hide cg meow restaurant arrive
+    show meowscarada neutral at character_scale
+    meow "You're on time."
+    meow "Good."
+    meow "Sit."
+    menu:
+        "Take a seat confidently.":
+            $ meowscarada_affection += 1
+            meow "Hmm."
+            hide meowscarada neutral
+            show cg meow restaurant eyecheck with slow_dissolve
+            cine "He looks you over slowly."
+            cine "Top to bottom."
+            cine "Something flickers behind those pink eyes."
+            hide cg meow restaurant eyecheck
+            show meowscarada smirk at character_scale
+        "Apologize for making him wait.":
+            meow "I said you were on time."
+            meow "Don't apologize for things that don't need apologizing for."
+            hide meowscarada neutral
+            show cg meow restaurant eyecheck with slow_dissolve
+            cine "His facial expression doesn't falter, and yet..."
+            cine "You feel like this wasn't what he was looking for."
+            hide cg meow restaurant eyecheck
+            show meowscarada bored at character_scale
+
+    meow "I'll be honest."
+    meow "I don't usually do this."
+    meow "Dating apps are beneath me."
+
+    menu:
+        "So why did you?":
+            $ meowscarada_affection += 1
+            meow "..."
+            meow "Curiosity."
+            meow "You looked like you might be worth my time."
+            meow "Jury's still out."
+        "Yet here you are.":
+            $ meowscarada_affection += 2
+            meow "..."
+            meow "Yes."
+            meow "Here I am."
+            hide meowscarada neutral
+            show cg meow restaurant smile with slow_dissolve
+            cine "He smiles. Just slightly."
+            cine "It's the most unnerving thing you've ever seen."
+            hide cg meow restaurant smile
+            show meowscarada smirk at character_scale
+
+    hide meowscarada smirk
+    show cg meow restaurant waiter with slow_dissolve
+    cine "The waiter arrives."
+    cine "Meowscarada orders without looking at the menu."
+    cine "Something expensive. In French."
+    cine "The waiter doesn't bat an eye."
+    cine "You order whatever sounds least likely to embarrass you."
+    hide cg meow restaurant waiter
+    show meowscarada neutral at character_scale
+
+    meow "So."
+    meow "Tell me something about yourself."
+    meow "And please."
+    meow "Make it interesting."
+
+    menu:
+        "Tell him something genuinely interesting.":
+            $ meowscarada_affection += 2
+            hide meowscarada neutral
+            show cg meow restaurant smile with slow_dissolve
+            cine "He's quiet for a moment."
+            cine "Actually quiet. Not dismissive quiet."
+            hide cg meow restaurant smile
+            show meowscarada amused at character_scale
+            meow "Hm."
+            meow "That's actually not terrible."
+            hide meowscarada amused
+            show cg meow restaurant smile with slow_dissolve
+            cine "He leans back in his seat."
+            cine "Something in his posture shifts."
+            hide cg meow restaurant smile
+            show meowscarada smirk at character_scale
+            jump meowscarada_restroom_offer
+        "Give a safe boring answer.":
+            hide meowscarada neutral
+            show meowscarada annoyed at character_scale
+            meow "..."
+            meow "That's it?"
+            meow "Really."
+            hide meowscarada annoyed
+            show cg meow restaurant smile with slow_dissolve
+            cine "He sets his wine glass down very slowly."
+            hide cg meow restaurant smile
+            show meowscarada annoyed at character_scale
+            meow "I'm going to need you to do significantly better than that."
+            jump meowscarada_boring_route
+
+# ============================================================
+# BORING ROUTE - FOOTJOB + ANAL VORE
+# ============================================================
+
+label meowscarada_boring_route:
+    hide meowscarada predatory
+    show cg meow restaurant footjob with slow_dissolve
+    cine "Something shifts under the table."
+    cine "You feel it before you understand what it is."
+    cine "His foot. Sliding deliberately up your leg."
+    cine "Slow. Purposeful."
+    hide cg meow restaurant footjob
+    show meowscarada smirk at character_scale
+    meow "Since conversation seems to be off the table..."
+    meow "We'll find another way to pass the time."
+    hide meowscarada smirk
+    show cg meow restaurant footjob2 with slow_dissolve
+    cine "He picks his wine glass back up."
+    cine "Takes a sip."
+    cine "Looks out the window like nothing is happening."
+    cine "Like he isn't doing exactly what he's doing."
+    cine "Under the table. In a restaurant."
+    cine "With a completely straight face."
+    cine "The waiter comes to check on you."
+    cine "Meowscarada smiles politely and asks how the kitchen is doing tonight."
+    cine "You say nothing."
+    cine "You are physically incapable of saying nothing."
+    cine "By the time the main course arrives you have completely lost the thread of any conversation."
+    cine "He maintains it effortlessly."
+    cine "Discussing wine vintages."
+    cine "The architecture of the restaurant."
+    cine "Current events."
+    cine "His foot does not stop."
+    cine "By the time dessert arrives you're a complete mess."
+    cine "He looks perfectly fine."
+    cine "He always looks perfectly fine."
+    hide cg meow restaurant footjob2
+    show meowscarada neutral at character_scale
+    meow "Well."
+    meow "That was marginally more entertaining than your conversation."
+
+    menu:
+        "That was incredible.":
+            meow "I know."
+        "You're completely unbelievable.":
+            $ meowscarada_affection += 1
+            meow "Yes."
+            meow "I am."
+
+    show meowscarada annoyed at character_scale
+    meow "Unfortunately."
+    cine "He dabs his mouth with the napkin."
+    cine "Sets it down with the kind of finality that makes your stomach drop."
+    hide meowscarada annoyed
+    show meowscarada hungry at character_scale
+    meow "Dinner itself was rather dull."
+    meow "I hate wasting a good meal."
+    cine "He stands."
+    cine "Smooths his shirt."
+    cine "Looks down at you."
+    meow "Don't take it personally."
+    hide meowscarada hungry
+    show cg meow restaurant analpresent with slow_dissolve
+    cine "He stands up from the table."
+    cine "Turns around."
+    hide cg meow restaurant analpresent
+    show cg meow restaurant analvore with slow_dissolve
+    cine "It happens very quickly."
+    cine "One moment you're sitting at the table."
+    cine "The next you're not."
+    hide cg meow restaurant analvore
+    show cg meow restaurant bellybulge with slow_dissolve
+    cine "The restaurant continues around him."
+    cine "Nobody notices."
+    cine "Nobody ever notices with him."
+    cine "He sits back down."
+    cine "Folds his hands on the table."
+    cine "His stomach gives one long slow shift as it gets to work."
+    cine "He orders another glass of wine."
+    cine "Checks his phone."
+    cine "The digestion is thorough and unhurried."
+    cine "He finishes his wine."
+    cine "Scrolls through his messages."
+    hide cg meow restaurant bellybulge
+    show cg meow restaurant weightgain with slow_dissolve
+    cine "His stomach gurgles quietly, deeply satisfied."
+    cine "He pats it once without thinking about it."
+    cine "By the time the bill arrives everything is considerably more settled."
+    cine "He reaches into his pocket."
+    cine "Pauses."
+    cine "Reaches somewhere else instead."
+    show cg meow restaurant skull with slow_dissolve
+    cine "Sets something small and white on the silver tray."
+    cine "Neatly. Precisely."
+    cine "Right where a tip would go."
+    show meowscarada smirk at character_scale
+    meow "Service was adequate."
+    meow "But you were pretty dull"
+    $ persistent.endings["not_worth_walk"] = True
+    call screen ending_popup("Not Even Worth the Walk", "#e74c3c")
+
+# ============================================================
+# RESTROOM OFFER
+# ============================================================
+
+label meowscarada_restroom_offer:
+    show meowscarada smirk at character_scale
+    meow "You know."
+    meow "The restrooms here are very private."
+    meow "I've always found that interesting."
+    hide meowscarada smirk
+    show cg meow restaurant smile with slow_dissolve
+    cine "He tilts his head slightly."
+    cine "Watching you with those half lidded pink eyes."
+    cine "Waiting."
+    
+    menu:
+        "Follow him.":
+            jump meowscarada_restroom
+        "Decline politely.":
+            jump meowscarada_footjob_route
+
+# ============================================================
+# FOOTJOB ROUTE - LEADS TO ALLEY
+# ============================================================
+
+label meowscarada_footjob_route:
+    show meowscarada smirk at character_scale
+    meow "No?"
+    hide meowscarada smirk
+    show cg meow restaurant smile with slow_dissolve
+    cine "He looks at you for a long moment."
+    show meowscarada smirk at character_scale
+    meow "Interesting."
+    hide meowscarada smirk
+    cine "He smiles."
+    cine "It doesn't reach his eyes."
+    hide cg meow restaurant smile
+    show cg meow restaurant footjob with slow_dissolve
+    cine "Something slides under the table."
+    show meowscarada smirk at character_scale
+    meow "Suit yourself."
+    hide cg meow restaurant footjob
+    show cg meow restaurant footjob2 with slow_dissolve
+    cine "He keeps you thoroughly occupied for the rest of dinner."
+    cine "Not a word about it."
+    cine "Not a flicker on his face."
+    cine "Completely composed."
+    cine "Completely in control."
+    cine "You are neither of those things."
+    cine "The waiter refills his water."
+    cine "He thanks them pleasantly."
+    cine "You stare at the tablecloth and try to remember how to breathe."
+    hide cg meow restaurant footjob2
+    show meowscarada neutral at character_scale
+    cine "After dinner he stands and straightens his jacket."
+    meow "There's an alley nearby I'm rather fond of."
+    meow "Come."
+    hide meowscarada neutral
+    cine "He walks out without checking if you're following."
+    cine "He knows you are."
+    jump meowscarada_alley
+
+# ============================================================
+# RESTROOM ROUTE
+# ============================================================
+
+label meowscarada_restroom:
+    scene bg restroom with slow_dissolve
+    cine "The restroom is indeed very private."
+    cine "Single occupancy."
+    cine "He locks the door behind you."
+    cine "Doesn't rush."
+    show meowscarada smirk at character_scale
+    meow "So."
+    hide meowscarada smirk
+    show cg meow restroom door with slow_dissolve
+    cine "He turns to face you."
+    cine "Leans against the wall."
+    cine "Arms loose at his sides."
+    cine "Looking at you like you're something he hasn't quite decided what to do with yet."
+    hide cg meow restroom door
+    show cg meow restroom makeout with slow_dissolve
+    cine "You close the distance."
+    cine "He lets you."
+    cine "Barely."
+    hide cg meow restroom makeout
+    show meowscarada smirk at character_scale
+    meow "What are you going to do with me?"
+
+    menu:
+        "Take charge.":
+            jump meowscarada_restroom_top
+        "Let him lead.":
+            jump meowscarada_restroom_sub
+
+label meowscarada_restroom_top:
+    hide meowscarada smirk
+    show cg meow restroom surprised with slow_dissolve
+    cine "You close the distance."
+    cine "He raises an eyebrow."
+    cine "For a moment he actually looks surprised."
+    cine "Genuinely surprised."
+    cine "It lasts about two seconds."
+    hide cg meow restroom surprised
+    show meowscarada surprised at character_scale
+    meow "Oh."
+    meow "Oh that's adorable."
+    hide meowscarada surprised
+    show meowscarada hungry at character_scale
+    show cg meow restroom makeout2 with slow_dissolve
+    cine "He lets you have your moment."
+    cine "He lets you think you're in control."
+    cine "The makeout is intense."
+    cine "Breathless."
+    cine "He tastes like expensive wine and something else."
+    cine "Something warm."
+    cine "His hands come up to your shoulders."
+    cine "Gentle at first."
+    cine "Then not."
+    hide cg meow restroom makeout2
+    show cg meow restroom smug with slow_dissolve
+    cine "He pulls back just far enough to look at you."
+    cine "Those pink eyes."
+    cine "That expression."
+    meow "Thank you for dinner."
+    hide cg meow restroom smug
+    show cg meow restroom mawshot with slow_dissolve
+    cine "He slowly opens his maw"
+    cine "Until you're left staring down into that abyss of a gullet."
+    cine "You blush a bit...freak."
+    hide cg meow restroom mawshot
+    show cg meow restroom swallow with slow_dissolve
+    cine "You're sent head first down his throat."
+    cine "A slight moan escapes him as he swallows"
+    cine "You know, between you and me"
+    cine "You should have picked up that he is a top"
+    hide cg meow restroom swallow
+    show cg meow restroom postswallow with slow_dissolve
+    cine "The restroom is very quiet afterwards."
+    cine "His reflection looks back at him from the mirror."
+    cine "He fixes his hair."
+    cine "Takes his time."
+    hide cg meow restroom postswallow
+    show cg meow restroom digestion with slow_dissolve
+    cine "His stomach gives a long slow rumble."
+    cine "He watches it in the mirror."
+    cine "Pats it once."
+    cine "Absently."
+    cine "The way you'd pat a pocket to check your keys."
+    cine "The digestion is warm and thorough."
+    cine "He adjusts his collar."
+    cine "Straightens his sleeves."
+    cine "His stomach gurgles again."
+    cine "Lower this time."
+    cine "Deeper."
+    hide cg meow restroom digestion
+    cine "Satisfied."
+    cine "He tilts his head back."
+    cine "A sound escapes him."
+    cine "He doesn't particularly try to suppress it."
+    cine "Something small and white clatters into the sink."
+    cine "He looks at it."
+    cine "Picks it up."
+    cine "Holds it up to the light for a moment."
+    show meowscarada smirk at character_scale
+    meow "Waste not."
+    hide meowscarada smirk
+    cine "He drops it in the bin."
+    cine "Unlocks the door."
+    cine "Walks back to his table to finish dinner."
+    cine "Orders dessert."
+    cine "It's a very good crème brûlée."
+
+    $ persistent.endings["dessert"] = True
+    call screen ending_popup("Dessert", "#e74c3c")
+
+label meowscarada_restroom_sub:
+    hide meowscarada smirk
+    cine "You step back."
+    cine "Give him the space."
+    cine "He looks at you for a long moment."
+    cine "Reading something in your expression."
+    show meowscarada pleased at character_scale
+    meow "Smart."
+    hide meowscarada pleased
+    cine "What follows is not something you'll forget easily."
+    cine "He's completely in control."
+    cine "Unhurried."
+    cine "Thorough."
+    cine "Like he has all the time in the world and intends to use it."
+    cine "You don't remember at what point your legs stop working."
+    cine "He catches you."
+    cine "Of course he does."
+    cine "He doesn't comment on it."
+    cine "When you finally leave the restroom he straightens his collar."
+    cine "Glances at you."
+    show meowscarada smirk at character_scale
+    meow "You'll do."
+    meow "Come."
+    meow "Let's finish dinner."
+    hide meowscarada smirk
+    cine "He holds the door."
+    cine "The restaurant is exactly as you left it."
+    cine "Nobody suspects a thing."
+    cine "He orders dessert."
+    cine "Recommends the crème brûlée."
+    cine "It's a very good date."
+    $ persistent.endings["youll_do"] = True
+    call screen ending_popup("You'll Do — Happy End", "#2ecc71")
+
+# ============================================================
+# ALLEY ROUTE
+# ============================================================
+
+label meowscarada_alley:
+    scene bg alley with slow_dissolve
+    show meowscarada predatory at character_scale
+    cine "The alley is quiet."
+    cine "Dark."
+    cine "The kind of private that cities only manage by accident."
+    cine "He stops walking."
+    cine "Turns."
+    meow "I had a lovely evening."
+    meow "Mostly."
+    hide meowscarada predatory
+    cine "He tilts his head."
+    cine "That smile."
+    show meowscarada predatory at character_scale
+    meow "I'm still a little hungry though."
+    hide meowscarada predatory
+    cine "He takes a step closer."
+    cine "The alley feels smaller than it did a moment ago."
+
+    if meowscarada_affection >= 3:
+        menu:
+            "Wait— let's talk about this.":
+                jump meowscarada_alley_convince
+            "Say nothing.":
+                jump meowscarada_alley_vore
+    else:
+        jump meowscarada_alley_vore
+
+label meowscarada_alley_convince:
+    show meowscarada surprised at character_scale
+    meow "..."
+    meow "Talk about it."
+    hide meowscarada surprised
+    cine "He stops."
+    cine "Actually stops."
+    show meowscarada surprised at character_scale
+    meow "You want to talk about it."
+    hide meowscarada surprised
+    cine "He stares at you."
+    cine "Something shifts in his expression."
+    show meowscarada smirk at character_scale
+    meow "You're either very brave or very stupid."
+    meow "I haven't decided which."
+    hide meowscarada smirk
+    cine "A long pause."
+    cine "A cat passes at the far end of the alley."
+    cine "Doesn't look twice."
+    show meowscarada smirk at character_scale
+    meow "..."
+    meow "Fine."
+    meow "Convince me you're more interesting alive."
+
+    menu:
+        "Offer an alternative.":
+            $ meowscarada_affection += 1
+            hide meowscarada smirk
+            cine "He's quiet for a moment."
+            show meowscarada pleased at character_scale
+            meow "..."
+            meow "That's not the worst counteroffer I've heard."
+            jump meowscarada_alley_happy
+        "Beg.":
+            hide meowscarada smirk
+            show meowscarada predatory at character_scale
+            meow "Pathetic."
+            jump meowscarada_alley_vore
+
+label meowscarada_alley_happy:
+    hide meowscarada pleased
+    cine "What follows is enthusiastic."
+    cine "And thorough."
+    cine "And very much on his terms."
+    cine "Which somehow makes it better."
+    cine "When it's over he looks down at you."
+    cine "That unreadable expression."
+    cine "He crouches down to your level."
+    cine "Slowly."
+    cine "Opens his mouth."
+    cine "Wide."
+    cine "His tongue runs along his teeth."
+    cine "Deliberate."
+    cine "His eyes don't leave yours."
+    show meowscarada smirk at character_scale
+    meow "...Next time."
+    hide meowscarada smirk
+    cine "He stands."
+    cine "Smooths his shirt."
+    cine "Like nothing happened."
+    cine "Like that wasn't a promise and a threat in the same breath."
+    show meowscarada smirk at character_scale
+    meow "Same app."
+    meow "Don't keep me waiting."
+    hide meowscarada smirk
+    cine "He walks back toward the street."
+    cine "Doesn't look back."
+    cine "You stay in the alley for a while."
+    cine "Thinking about what next time means."
+    cine "Then."
+    cine "Sirens."
+    cine "Blue and red light floods the alley entrance."
+    "???" "Hey! You there! Don't move!"
+    $ persistent.endings["next_time"] = True
+    $ persistent.boykisser_unlocked = True
+    call screen ending_popup("Next Time — Happy End", "#2ecc71")
+
+label meowscarada_alley_vore:
+    show meowscarada predatory at character_scale
+    meow "It was a good date."
+    meow "Mostly."
+    hide meowscarada predatory
+    cine "He steps closer."
+    cine "Close enough that you have to look up at him."
+    show meowscarada predatory at character_scale
+    meow "Don't worry."
+    hide meowscarada predatory
+    cine "He reaches out."
+    cine "Adjusts your collar."
+    cine "Gently."
+    show meowscarada hungry at character_scale
+    meow "You'll make an excellent dessert."
+    hide meowscarada hungry
+    cine "He opens his mouth."
+    cine "Wider than seems possible."
+    cine "Wider than seems right."
+    cine "And then."
+    cine "."
+    cine "The world tilts."
+    cine "Warm."
+    cine "Dark."
+    cine "The sounds of the city go muffled and distant."
+    cine "Something contracts around you."
+    cine "Slow."
+    cine "Rhythmic."
+    cine "Inevitable."
+    cine "It's not uncomfortable."
+    cine "That's somehow the strangest part."
+    cine "It's warm."
+    cine "And very dark."
+    cine "And then warmer still."
+    cine "Outside the alley is quiet."
+    cine "He leans against the wall."
+    cine "One hand resting on his stomach."
+    cine "The other scrolling through his phone."
+    cine "AnthroDate is still open."
+    cine "He's already browsing."
+    cine "His stomach shifts."
+    cine "He shifts with it."
+    cine "Settles."
+    cine "The digestion is thorough and warm and entirely unhurried."
+    cine "He has nowhere to be."
+    cine "His stomach gurgles."
+    cine "Low."
+    cine "Deep."
+    cine "Satisfied."
+    cine "He pats it once."
+    cine "Doesn't think about it."
+    cine "The city moves around him."
+    cine "Nobody looks twice at a man leaning against a wall."
+    cine "Time passes."
+    cine "His stomach settles further."
+    cine "Quieter now."
+    cine "The job nearly done."
+    cine "He tilts his head back."
+    cine "The alley echoes."
+    cine "Something rolls along the cobblestones."
+    cine "Comes to rest against the opposite wall."
+    cine "He glances at it."
+    cine "Looks back at his phone."
+    show meowscarada smirk at character_scale
+    meow "Three stars."
+    meow "Conversation could have been better."
+    hide meowscarada smirk
+    cine "He pushes off the wall."
+    cine "Walks back toward the street."
+    cine "Doesn't look back."
+
+    $ persistent.endings["dessert_alley"] = True
+    call screen ending_popup("Dessert in the Alley", "#e74c3c")
+
+# ============================================================
+# NANACHI ROUTE PLACEHOLDER
+# ============================================================
+
+label nanachi_match:
+    cine "It's a match."
+    cine "Nanachi's response comes after a long pause."
+    cine "Typical."
+    jump nanachi_chat_1
+
+label nanachi_chat_1:
+    show nanachi curious
+    nana "...You liked my profile."
+    nana "Nnn. Interesting."
+
+    menu:
+        "You seemed unique.":
+            $ nanachi_affection += 1
+            nana "...Most people say weird."
+            nana "Unique is better."
+        "Your bio made me laugh.":
+            $ nanachi_affection += 2
+            nana "Nnn. Good."
+            nana "It was supposed to."
+
+    jump nanachi_chat_2
+
+label nanachi_chat_2:
+    show nanachi neutral
+    nana "I don't go out much."
+    nana "But I could make an exception."
+    nana "...Maybe."
+
+    menu:
+        "Ask her out.":
+            jump nanachi_date1_setup
+        "Leave it up to her.":
+            $ nanachi_affection += 1
+            nana "Nnn. Good answer."
+            jump nanachi_date1_setup
+
+label nanachi_date1_setup:
+    show nanachi curious
+    nana "There's a place I know. Quiet. Good food."
+    nana "Don't expect anything fancy."
+    hide nanachi curious
+    cine "She sends an address. A cozy looking cafe."
+    cine "You look it up."
+    cine "It doesn't have a website."
+    cine "Or a Google listing."
+    cine "Or apparently any online presence whatsoever."
+    cine "You decide this is fine."
+    jump nanachi_date1
+
+label nanachi_date1:
+    scene bg app
+    show nanachi neutral
+    "To be continued..."
+    return
+
+# ============================================================
+# BOYKISSER ROUTE
+# ============================================================
+
+default boykisser_affection = 0
+define boy = Character("Officer Boykisser", color="#4169e1")
+
+label boykisser_match:
+    $ boykisser_affection = 0
+    scene bg alley with slow_dissolve
+    
+    cine "The alley falls quiet again."
+    cine "Just the distant hum of the city and your own heartbeat."
+    cine "Then comes the sound of approaching footsteps."
+    cine "Blue and red lights wash over the brick walls."
+
+    boy "Hey! Don't move!"
+
+    cine "The voice is calmer than you expected."
+    show cg boy alley approach with slow_dissolve
+    cine "A white-furred officer steps into view, flashlight lowered slightly once he sees you're not running."
+    hide cg boy alley approach
+    show boykisser neutral at character_scale
+    boy "You alright? We got a noise complaint about this alley."
+    boy "Dispatch said they heard... some pretty strange sounds."
+
+    cine "He looks you up and down, ears twitching under his cap."
+    boy "I'm Officer Boykisser. Mind telling me what you're doing out here this late?"
+
+    menu:
+        "Give him your name.":
+            $ boykisser_affection += 1
+            boy "Nice to meet you. Now... what exactly were you doing back here?"
+            jump boykisser_question2
+        "Stay quiet.":
+            show boykisser smirk at character_scale
+            boy "...Tough crowd, huh?"
+            boy "Alright. We'll circle back to that."
+            jump boykisser_question2
+
+label boykisser_question2:
+    show boykisser neutral at character_scale
+    boy "So. Care to explain what happened in this alley?"
+
+    menu:
+        "Just taking a walk.":
+            $ boykisser_affection -= 1
+            show boykisser smirk at character_scale
+            boy "A walk. In a dark alley. At three in the morning."
+            boy "Sure."
+            jump boykisser_cumspot
+        "I was with someone.":
+            $ boykisser_affection += 1
+            boy "With someone, huh?"
+            boy "And where are they now?"
+            jump boykisser_cumspot
+
+label boykisser_cumspot:
+    hide boykisser neutral
+    hide boykisser smirk
+    show cg boy alley cumspot with slow_dissolve
+    cine "He takes a slow step closer, flashlight sweeping over you."
+    cine "The light stops on your face... then drifts downward."
+    cine "He pauses."
+    hide cg boy alley cumspot
+    show boykisser smirk at character_scale
+    boy "...You've got something on your cheek."
+    boy "And your shirt."
+    boy "And your pants."
+    hide boykisser smirk
+    cine "His ears twitch."
+    show boykisser amused at character_scale
+    boy "Real subtle."
+
+    menu:
+        "Wipe it off casually.":
+            $ boykisser_affection += 1
+            boy "Better. Still not great, but better."
+            jump boykisser_escalate
+        "It's not what it looks like.":
+            $ boykisser_affection -= 1
+            show boykisser smirk at character_scale
+            boy "It's exactly what it looks like."
+            jump boykisser_escalate
+        "Yeah. Got a problem with that?":
+            $ boykisser_affection += 2
+            show boykisser amused at character_scale
+            boy "Hah. Bold. I like that."
+            jump boykisser_escalate
+
+label boykisser_escalate:
+    show boykisser smirk at character_scale
+    boy "Look... I'm going to be honest with you."
+    boy "I don't actually care that much about the noise complaint."
+    boy "But I do need to take you in for questioning."
+    hide boykisser smirk
+    
+    cine "He tilts his head, that playful smirk still lingering."
+    show boykisser amused at character_scale
+    boy "My car's right outside. Come on."
+    hide boykisser amused
+    cine "He turns and starts walking toward the alley entrance without waiting."
+    cine "Confident you'd follow."
+    if boykisser_affection >= 2:
+        jump boykisser_car_good
+    elif boykisser_affection >= 0:
+        jump boykisser_car_bad
+    else:
+        jump boykisser_alley_vore
+
+# ============================================================
+# BOYKISSER CAR SCENES
+# ============================================================
+
+label boykisser_car_good:
+    scene bg alley with slow_dissolve
+    cine "His squad car is parked just outside the alley entrance."
+    cine "He opens the back door."
+    cine "Gestures."
+    show boykisser smirk at character_scale
+    boy "In you get."
+    hide boykisser smirk
+    scene bg car with slow_dissolve
+    cine "You get in."
+    cine "He closes the door."
+    cine "Gets in the front."
+    cine "Doesn't start the engine."
+    show boykisser smirk at character_scale
+    boy "So."
+    boy "You going to tell me what actually happened back there?"
+    
+    menu:
+        "Tell him everything.":
+            $ boykisser_affection += 2
+            show boykisser amused at character_scale
+            boy "..."
+            boy "A Meowscarada."
+            boy "In that alley."
+            boy "And you just... went along with it."
+            hide boykisser amused
+            cine "He turns around in his seat."
+            cine "Looking at you with an expression that takes a moment to read."
+            show boykisser smirk at character_scale
+            boy "You've got guts. I'll give you that."
+            jump boykisser_car_good_escalate
+        "Tell him some of it.":
+            $ boykisser_affection += 1
+            show boykisser neutral at character_scale
+            boy "Uh huh."
+            boy "Sure."
+            hide boykisser neutral
+            cine "He doesn't look entirely convinced."
+            cine "But he lets it go."
+            show boykisser smirk at character_scale
+            jump boykisser_car_good_escalate
+
+label boykisser_car_good_escalate:
+    scene bg car with slow_dissolve
+    hide boykisser smirk
+    cine "The car is very quiet."
+    cine "City sounds muffled through the windows."
+    cine "He's still turned around in his seat."
+    cine "Looking at you."
+    cine "That expression."
+    cine "Like he's making a decision."
+    show boykisser smirk at character_scale
+    boy "You know."
+    boy "I probably shouldn't be doing this."
+    hide boykisser smirk
+    cine "He climbs over the center console."
+    cine "Into the back seat."
+    cine "It's a tight fit."
+    cine "He settles in like it isn't."
+    show boykisser smirk at character_scale
+    boy "But you were honest with me."
+    boy "That counts for something."
+    boy "In my professional opinion."
+    hide boykisser smirk
+    cine "He reaches up."
+    cine "Takes his cap off."
+    cine "Sets it on the dashboard."
+    cine "Runs a hand through his fur."
+    cine "Looks considerably less official without it."
+    cine "Considerably more something else."
+    show boykisser amused at character_scale
+    boy "So."
+    boy "A Meowscarada."
+    boy "In that alley."
+    boy "And you just went along with it."
+    hide boykisser amused
+    cine "He shakes his head slowly."
+    cine "Still smiling."
+    show boykisser smirk at character_scale
+    boy "Dangerous taste you've got."
+    hide boykisser smirk
+    cine "He closes the distance."
+    cine "No preamble."
+    cine "No further commentary."
+    cine "Just."
+    cine "Him."
+    cine "Very close."
+    cine "And then closer."
+    cine "The back seat of a squad car is not the most spacious venue."
+    cine "He makes it work."
+    cine "Thoroughly."
+    cine "Unhurriedly."
+    cine "Like he has nowhere else to be."
+    cine "Which technically he does."
+    cine "He ignores that."
+    cine "The windows fog up."
+    cine "His radio crackles once."
+    cine "He reaches forward without looking and turns the volume down."
+    cine "Doesn't break stride."
+    cine "When it's finally over he leans back."
+    cine "Breathing harder than before."
+    cine "Looking at you with half lidded eyes."
+    cine "That smile."
+    show boykisser smirk at character_scale
+    boy "Dispatch is going to be so mad at me."
+    hide boykisser smirk
+    cine "He doesn't sound particularly concerned about that."
+    cine "He retrieves his cap from the dashboard."
+    cine "Puts it back on."
+    cine "Immediately looks official again."
+    cine "It's impressive how fast he does that."
+    show boykisser neutral at character_scale
+    boy "You're free to go."
+    boy "Stay out of dark alleys."
+    hide boykisser neutral
+    cine "He opens the back door for you."
+    cine "Very professionally."
+    cine "Like none of that just happened."
+    show boykisser smirk at character_scale
+    boy "And hey."
+    hide boykisser smirk
+    cine "He leans against the car door."
+    cine "Arms folded."
+    cine "That look."
+    show boykisser smirk at character_scale
+    boy "Stay out of trouble."
+    boy "Or don't."
+    hide boykisser smirk
+    cine "He winks."
+    cine "Gets back in the car."
+    cine "Drives away."
+    cine "You stand on the street outside the alley."
+    cine "Watching the squad car disappear around the corner."
+    cine "The city is very loud suddenly."
+    cine "You check your phone."
+    cine "3 AM."
+    cine "You have a notification."
+    cine "AnthroDate."
+    cine "Officer Boykisser liked your profile."
+
+    $ persistent.endings["boykisser_good"] = True
+    call screen ending_popup("Good Cop — Happy End", "#2ecc71")
+    return
+
+# ============================================================
+# BAD ROUTE - CAR VORE
+# ============================================================
+
+label boykisser_car_bad:
+    scene bg alley with slow_dissolve
+    cine "His squad car is parked just outside the alley entrance."
+    cine "He opens the back door."
+    cine "Gestures."
+    show boykisser smirk at character_scale
+    boy "In you get."
+    hide boykisser smirk
+    scene bg car with slow_dissolve
+    cine "You get in."
+    cine "He closes the door."
+    cine "Gets in the front."
+    cine "Doesn't start the engine."
+    show boykisser neutral at character_scale
+    boy "So."
+    boy "You going to tell me what actually happened back there?"
+
+    menu:
+        "Stick to your story.":
+            $ boykisser_affection -= 1
+            show boykisser smirk at character_scale
+            boy "Uh huh."
+            jump boykisser_car_bad_escalate
+        "Admit part of it.":
+            show boykisser neutral at character_scale
+            boy "Part of it."
+            boy "Right."
+            jump boykisser_car_bad_escalate
+
+label boykisser_car_bad_escalate:
+    scene bg car with slow_dissolve
+    hide boykisser smirk
+    hide boykisser neutral
+    cine "He turns around in his seat."
+    cine "Arms folded on the headrest."
+    cine "Looking at you."
+    show boykisser smirk at character_scale
+    boy "You know what I think?"
+    boy "I think you're not being entirely honest with me."
+    hide boykisser smirk
+    cine "He climbs over the center console."
+    cine "Into the back seat."
+    show boykisser smirk at character_scale
+    boy "I'm going to give you one more chance."
+    boy "What were you actually doing in that alley?"
+
+    menu:
+        "Tell him the truth now.":
+            $ boykisser_affection += 1
+            show boykisser amused at character_scale
+            boy "See? Was that so hard?"
+            boy "A Meowscarada huh."
+            boy "Dangerous company you keep."
+            hide boykisser amused
+            cine "He's quiet for a moment."
+            cine "Then he smiles."
+            show boykisser smirk at character_scale
+            boy "Well. Since you finally came clean."
+            jump boykisser_car_bad_sex
+        "Lie again.":
+            show boykisser predatory at character_scale
+            boy "..."
+            boy "Wrong answer."
+            jump boykisser_car_vore
+
+label boykisser_car_bad_sex:
+    hide boykisser smirk
+    cine "What follows is considerably less gentle than it might have been."
+    cine "He's made his point."
+    cine "The back seat of a squad car is not the most spacious venue."
+    cine "He doesn't seem to care."
+    cine "Neither do you."
+    cine "He's thorough."
+    cine "Methodical."
+    cine "Like everything else he does."
+    cine "The windows fog up within minutes."
+    cine "Someone walks past the car."
+    cine "Keeps walking."
+    cine "Smart."
+    cine "When it's over he sits back."
+    cine "Breathing slightly harder than before."
+    cine "Looking at you with that expression."
+    show boykisser smirk at character_scale
+    boy "See."
+    boy "That's what honesty gets you."
+    hide boykisser smirk
+    cine "A pause."
+    cine "He tilts his head."
+    cine "Something shifts in his expression."
+    show boykisser predatory at character_scale
+    boy "Mostly."
+    hide boykisser predatory
+    cine "He leans forward."
+    cine "Slowly."
+    cine "One hand braced on the seat beside you."
+    cine "The other resting on his own stomach."
+    cine "Which is growling."
+    cine "Audibly."
+    show boykisser smirk at character_scale
+    boy "Thing is."
+    boy "You still lied."
+    boy "Just... less than you could have."
+    boy "I respect the partial effort."
+    hide boykisser smirk
+    cine "He opens his mouth."
+    cine "Wide."
+    cine "Wider than seems right for someone his size."
+    cine "His tongue runs slowly along his teeth."
+    cine "Eyes half lidded."
+    cine "Completely calm."
+    show boykisser predatory at character_scale
+    boy "Consider the rest of this your fine."
+    hide boykisser predatory
+    cine "He doesn't give you time to appeal."
+    cine "One moment you're in the back seat."
+    cine "The next you're considerably further back."
+    cine "And down."
+    cine "And warm."
+    cine "Very warm."
+    cine "His stomach contracts around you."
+    cine "Slow."
+    cine "Rhythmic."
+    cine "Satisfied."
+    jump boykisser_digestion
+
+label boykisser_car_vore:
+    hide boykisser predatory
+    cine "He doesn't give you time to reconsider."
+    cine "It happens very quickly."
+    cine "One moment you're in the back seat."
+    cine "The next you're not."
+    jump boykisser_digestion
+
+# ============================================================
+# SHARED DIGESTION AFTERMATH
+# ============================================================
+
+label boykisser_digestion:
+    scene bg car with slow_dissolve
+    cine "The squad car is very quiet."
+    cine "City sounds muffled through the windows."
+    cine "He leans back in the seat."
+    cine "Both hands resting on a considerably rounder belly than before."
+    cine "His uniform shirt strains against it."
+    cine "He pats it once."
+    cine "Tilts his seat back."
+    cine "Pulls his cap down over his eyes."
+    show boykisser neutral at character_scale
+    boy "Resisting arrest."
+    boy "Tsk."
+    hide boykisser neutral
+    cine "He falls asleep almost immediately."
+    cine "His stomach does not."
+    cine "It works quietly and thoroughly through the night."
+    cine "Gurgling softly in the dark car."
+    cine "Hours pass."
+    cine "The city outside goes quiet."
+    cine "Then slowly loud again."
+    cine "Morning."
+    cine "He wakes up when his radio crackles."
+    cine "Sits up slowly."
+    cine "Blinks."
+    cine "Looks down."
+    cine "His belly is gone."
+    cine "Mostly."
+    cine "What remains has redistributed."
+    cine "Considerably."
+    cine "He looks in the rearview mirror for a long moment."
+    cine "Then down at himself."
+    cine "Then back at the mirror."
+    show boykisser amused at character_scale
+    boy "Huh."
+    hide boykisser amused
+    cine "He shifts in his seat."
+    cine "Something feels different."
+    cine "Everything feels different."
+    cine "He reaches down."
+    cine "His expression changes."
+    show boykisser amused at character_scale
+    boy "Oh."
+    boy "Oh that's new."
+    hide boykisser amused
+    cine "What follows is a thorough and appreciative self examination."
+    cine "He takes his time."
+    cine "The radio crackles again."
+    cine "He ignores it."
+    show boykisser smirk at character_scale
+    boy "Dispatch is going to have to wait."
+    hide boykisser smirk
+
+    if boykisser_affection >= 2:
+        $ persistent.endings["boykisser_bad_sex"] = True
+        call screen ending_popup("Bad Cop — Resisting Arrest", "#e74c3c")
+    else:
+        $ persistent.endings["boykisser_alley_vore"] = True
+        call screen ending_popup("Resisting Arrest", "#e74c3c")
+    return
+
+# ============================================================
+# ALLEY ANAL VORE ROUTE
+# ============================================================
+
+label boykisser_alley_vore:
+    scene bg alley with slow_dissolve
+    show boykisser neutral at character_scale
+    cine "He stops walking."
+    cine "Turns around."
+    boy "Actually."
+    hide boykisser neutral
+    cine "He looks you up and down."
+    cine "Then at the alley."
+    cine "Then back at you."
+    show boykisser smirk at character_scale
+    boy "You know what."
+    boy "I don't think we need to go to the car for this."
+    boy "You've been lying to an officer of the law."
+    boy "That's a serious offense."
+    hide boykisser smirk
+    cine "He takes a step closer."
+    cine "Then another."
+    show boykisser predatory at character_scale
+    boy "I'm going to have to take you in."
+    boy "Personally."
+    hide boykisser predatory
+    show cg boy alley spread with slow_dissolve
+    cine "He turns around."
+    cine "Hooks his thumbs in his shorts."
+    cine "Slides them down just enough."
+    cine "Looks back at you over his shoulder."
+    boy "Don't make this harder than it needs to be."
+    cine "You don't."
+    hide cg boy alley spread
+    show cg boy alley analvore with slow_dissolve
+    cine "The alley is very quiet."
+    cine "A distant siren wails somewhere across the city."
+    cine "Ironic."
+    cine "It happens slowly."
+    cine "Which is somehow worse."
+    cine "Or better."
+    cine "Depending on your perspective."
+    cine "He's very patient about it."
+    cine "Professional, almost."
+    cine "His tail sways slowly as he works."
+    hide cg boy alley analvore
+    cine "By the time it's done he's straightening his shorts."
+    cine "Smoothing his uniform."
+    cine "Adjusting his cap."
+    show boykisser neutral at character_scale
+    boy "You have the right to remain silent."
+    hide boykisser neutral
+    cine "He pats his belly."
+    cine "Which is considerably more present than it was a moment ago."
+    show boykisser smirk at character_scale
+    boy "Not that you have much choice in the matter."
+    hide boykisser smirk
+    cine "He walks back toward his squad car."
+    cine "Gets in."
+    cine "Reclines the seat."
+    cine "His stomach shifts and settles around you."
+    cine "Warm."
+    cine "Dark."
+    cine "The last thing you hear before the digestion really gets going is the click of his radio."
+    show boykisser neutral at character_scale
+    boy "Dispatch this is unit seven."
+    boy "Taking my break."
+    hide boykisser neutral
+    cine "He falls asleep before they respond."
+    jump boykisser_digestion
